@@ -6,16 +6,13 @@ import (
 
 type World struct {
 	Networks map[string]PublicNetwork
-}
-
-type MachinesStorage struct {
-	Machines map[int]Machine // store machines by their id
+	Machines map[int]Machine
 }
 
 type Machine struct {
 	MachineID   int    // id of filesystem in database
 	PublicIp    string // public ip of machine
-	LocalID     int    // local ip of machine
+	LocalID     int    // local id of machine within its public network
 	MachineName string // name of the computer obviously
 }
 
@@ -25,25 +22,33 @@ func (world *World) NewMachine(publicIp string, machineName string) Machine {
 	// list it in the public network
 	if _, exists := world.Networks[publicIp]; !exists {
 		world.Networks[publicIp] = PublicNetwork{
-			Ip:             publicIp,
-			LocalNet:       make(map[int]int),
-			ForwardedPorts: make(map[int]int),
-			Machines:       0,
+			PublicIp:          publicIp,
+			MachinesByLocalID: make(map[int]int),
+			ForwardedPorts:    make(map[int]int),
+			LocalIDCounter:    0,
 		}
 	}
 
-	// increment the machines count in the public network for generating a new local id
+	// increment the local id counter in the public network for generating a new local id
 	pubnet := world.Networks[publicIp]
-	pubnet.Machines += 1
+	pubnet.LocalIDCounter += 1
 	world.Networks[publicIp] = pubnet
 
-	localID := pubnet.Machines
+	localID := pubnet.LocalIDCounter
 
-	// return new object
-	return Machine{
+	machineObj := Machine{
 		MachineID:   id,
 		PublicIp:    publicIp,
 		LocalID:     localID,
 		MachineName: machineName,
 	}
+	world.Machines[id] = machineObj
+
+	// return new object
+	return machineObj
+}
+
+func (world *World) GetMachine(machineID int) (Machine, bool) {
+	machine, exists := world.Machines[machineID]
+	return machine, exists
 }

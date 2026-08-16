@@ -21,7 +21,7 @@ func NewDataNode(name string, isDir bool) *DataNode {
 	}
 }
 
-func checkForAddability(node *DataNode, name string) error {
+func ensureChildAddable(node *DataNode, name string) error {
 	if !node.isDir {
 		return errors.New("cannot add node to a non-directory node")
 	}
@@ -37,8 +37,8 @@ func checkForAddability(node *DataNode, name string) error {
 	return nil
 }
 
-func (node *DataNode) NewNode(name string, isDir bool) error {
-	if err := checkForAddability(node, name); err != nil {
+func (node *DataNode) AddChild(name string, isDir bool) error {
+	if err := ensureChildAddable(node, name); err != nil {
 		return err
 	}
 
@@ -52,7 +52,7 @@ func (node *DataNode) NewNode(name string, isDir bool) error {
 	return nil
 }
 
-func (node *DataNode) ChangeFileData(data []byte) error {
+func (node *DataNode) SetData(data []byte) error {
 	if node.isDir {
 		return errors.New("cannot add data to the directory node")
 	}

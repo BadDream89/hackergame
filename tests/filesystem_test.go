@@ -6,10 +6,10 @@ import (
 	"hackergame/objects"
 )
 
-func TestNewNode_Success(t *testing.T) {
+func TestAddChild_Success(t *testing.T) {
 	root := objects.NewDataNode("/", true)
 
-	err := root.NewNode("file.txt", false)
+	err := root.AddChild("file.txt", false)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -23,10 +23,10 @@ func TestNewNode_Success(t *testing.T) {
 	}
 }
 
-func TestNewNode_LazilyInitializesChildrenMap(t *testing.T) {
+func TestAddChild_LazilyInitializesChildrenMap(t *testing.T) {
 	root := objects.NewDataNode("/", true)
 
-	if err := root.NewNode("dir1", true); err != nil {
+	if err := root.AddChild("dir1", true); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	if root.ChildCount() != 1 {
@@ -37,14 +37,14 @@ func TestNewNode_LazilyInitializesChildrenMap(t *testing.T) {
 	}
 }
 
-func TestNewNode_DuplicateName(t *testing.T) {
+func TestAddChild_DuplicateName(t *testing.T) {
 	root := objects.NewDataNode("/", true)
 
-	if err := root.NewNode("file.txt", false); err != nil {
+	if err := root.AddChild("file.txt", false); err != nil {
 		t.Fatalf("unexpected error on first insert: %v", err)
 	}
 
-	err := root.NewNode("file.txt", true)
+	err := root.AddChild("file.txt", true)
 	if err == nil {
 		t.Fatal("expected error when adding a duplicate name, got nil")
 	}
@@ -53,20 +53,20 @@ func TestNewNode_DuplicateName(t *testing.T) {
 	}
 }
 
-func TestNewNode_OnNonDirectory(t *testing.T) {
+func TestAddChild_OnNonDirectory(t *testing.T) {
 	file := objects.NewDataNode("file.txt", false)
 
-	err := file.NewNode("child", false)
+	err := file.AddChild("child", false)
 	if err == nil {
 		t.Fatal("expected error when adding a node under a non-directory, got nil")
 	}
 }
 
-func TestChangeFileData_Success(t *testing.T) {
+func TestSetData_Success(t *testing.T) {
 	file := objects.NewDataNode("file.txt", false)
 	data := []byte("hello world")
 
-	err := file.ChangeFileData(data)
+	err := file.SetData(data)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -75,10 +75,10 @@ func TestChangeFileData_Success(t *testing.T) {
 	}
 }
 
-func TestChangeFileData_OnDirectory(t *testing.T) {
+func TestSetData_OnDirectory(t *testing.T) {
 	dir := objects.NewDataNode("dir", true)
 
-	err := dir.ChangeFileData([]byte("nope"))
+	err := dir.SetData([]byte("nope"))
 	if err == nil {
 		t.Fatal("expected error when changing data on a directory node, got nil")
 	}

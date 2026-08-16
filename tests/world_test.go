@@ -7,7 +7,10 @@ import (
 )
 
 func newTestWorld() *objects.World {
-	return &objects.World{Networks: make(map[string]objects.PublicNetwork)}
+	return &objects.World{
+		Networks: make(map[string]objects.PublicNetwork),
+		Machines: make(map[int]objects.Machine),
+	}
 }
 
 func TestNewMachine_CreatesNetworkIfNotExists(t *testing.T) {
@@ -29,6 +32,20 @@ func TestNewMachine_CreatesNetworkIfNotExists(t *testing.T) {
 	}
 }
 
+func TestNewMachine_RegistersInWorldMachines(t *testing.T) {
+	world := newTestWorld()
+
+	machine := world.NewMachine("203.0.113.1", "test-pc")
+
+	stored, ok := world.Machines[machine.MachineID]
+	if !ok {
+		t.Fatalf("expected machine %d to be registered in world.Machines", machine.MachineID)
+	}
+	if stored != machine {
+		t.Errorf("expected stored machine %+v to equal returned machine %+v", stored, machine)
+	}
+}
+
 func TestNewMachine_ReturnsNonZeroMachineID(t *testing.T) {
 	world := newTestWorld()
 
@@ -44,10 +61,10 @@ func TestNewMachine_ReturnsNonZeroMachineID(t *testing.T) {
 func TestNewMachine_ExistingNetworkReusesIt(t *testing.T) {
 	world := newTestWorld()
 	world.Networks["203.0.113.1"] = objects.PublicNetwork{
-		Ip:             "203.0.113.1",
-		LocalNet:       make(map[int]int),
-		ForwardedPorts: make(map[int]string),
-		Machines:       5,
+		PublicIp:          "203.0.113.1",
+		MachinesByLocalID: make(map[int]int),
+		ForwardedPorts:    make(map[int]int),
+		LocalIDCounter:    5,
 	}
 
 	machine := world.NewMachine("203.0.113.1", "test-pc")
@@ -76,8 +93,8 @@ func TestNewMachine_PersistsMachinesCountAcrossCalls(t *testing.T) {
 	if third.LocalID != 3 {
 		t.Errorf("expected third machine LocalID %d, got %d", 3, third.LocalID)
 	}
-	if world.Networks["203.0.113.1"].Machines != 3 {
-		t.Errorf("expected stored network Machines count to persist at 3, got %d", world.Networks["203.0.113.1"].Machines)
+	if world.Networks["203.0.113.1"].LocalIDCounter != 3 {
+		t.Errorf("expected stored network Machines count to persist at 3, got %d", world.Networks["203.0.113.1"].LocalIDCounter)
 	}
 }
 

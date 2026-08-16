@@ -8,58 +8,58 @@ import (
 
 func newTestNetwork() objects.PublicNetwork {
 	return objects.PublicNetwork{
-		Ip:             "203.0.113.1",
-		LocalNet:       make(map[int]int),
-		ForwardedPorts: make(map[int]string),
-		Machines:       0,
+		PublicIp:          "203.0.113.1",
+		MachinesByLocalID: make(map[int]int),
+		ForwardedPorts:    make(map[int]int),
+		LocalIDCounter:    0,
 	}
 }
 
 func TestForwardPort_Success(t *testing.T) {
 	network := newTestNetwork()
 
-	got, err := network.ForwardPort(8080, "192.168.1.1")
+	got, err := network.ForwardPort(8080, 1)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if got != "192.168.1.1" {
-		t.Errorf("expected returned localIp %q, got %q", "192.168.1.1", got)
+	if got != 1 {
+		t.Errorf("expected returned localID %d, got %d", 1, got)
 	}
-	if network.ForwardedPorts[8080] != "192.168.1.1" {
-		t.Errorf("expected port 8080 to be forwarded to 192.168.1.1, got %q", network.ForwardedPorts[8080])
+	if network.ForwardedPorts[8080] != 1 {
+		t.Errorf("expected port 8080 to be forwarded to localID 1, got %d", network.ForwardedPorts[8080])
 	}
 }
 
 func TestForwardPort_AlreadyForwarded(t *testing.T) {
 	network := newTestNetwork()
 
-	if _, err := network.ForwardPort(8080, "192.168.1.1"); err != nil {
+	if _, err := network.ForwardPort(8080, 1); err != nil {
 		t.Fatalf("unexpected error on first forward: %v", err)
 	}
 
-	got, err := network.ForwardPort(8080, "192.168.1.2")
+	got, err := network.ForwardPort(8080, 2)
 	if err == nil {
 		t.Fatal("expected error when forwarding an already-forwarded port, got nil")
 	}
-	if got != "192.168.1.1" {
-		t.Errorf("expected existing forwarded ip %q to be returned, got %q", "192.168.1.1", got)
+	if got != 1 {
+		t.Errorf("expected existing forwarded localID %d to be returned, got %d", 1, got)
 	}
-	if network.ForwardedPorts[8080] != "192.168.1.1" {
-		t.Errorf("expected port mapping to remain unchanged, got %q", network.ForwardedPorts[8080])
+	if network.ForwardedPorts[8080] != 1 {
+		t.Errorf("expected port mapping to remain unchanged, got %d", network.ForwardedPorts[8080])
 	}
 }
 
 func TestForwardPort_DifferentPortsIndependent(t *testing.T) {
 	network := newTestNetwork()
 
-	if _, err := network.ForwardPort(80, "192.168.1.1"); err != nil {
+	if _, err := network.ForwardPort(80, 1); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if _, err := network.ForwardPort(443, "192.168.1.2"); err != nil {
+	if _, err := network.ForwardPort(443, 2); err != nil {
 		t.Fatalf("unexpected error forwarding a different port: %v", err)
 	}
 
-	if network.ForwardedPorts[80] != "192.168.1.1" || network.ForwardedPorts[443] != "192.168.1.2" {
+	if network.ForwardedPorts[80] != 1 || network.ForwardedPorts[443] != 2 {
 		t.Errorf("expected both ports forwarded independently, got %v", network.ForwardedPorts)
 	}
 }
@@ -75,8 +75,8 @@ func TestAddMachine_Success(t *testing.T) {
 	if got != 1 {
 		t.Errorf("expected returned localID %d, got %d", 1, got)
 	}
-	if id, ok := network.LocalNet[1]; !ok || id != 42 {
-		t.Errorf("expected LocalNet to map 1 -> 42, got %v (ok=%v)", id, ok)
+	if id, ok := network.MachinesByLocalID[1]; !ok || id != 42 {
+		t.Errorf("expected MachinesByLocalID to map 1 -> 42, got %v (ok=%v)", id, ok)
 	}
 }
 
@@ -92,8 +92,8 @@ func TestAddMachine_AlreadyExists(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when adding a machine with a duplicate localID, got nil")
 	}
-	if network.LocalNet[1] != 1 {
-		t.Errorf("expected LocalNet entry to remain unchanged (id=1), got %d", network.LocalNet[1])
+	if network.MachinesByLocalID[1] != 1 {
+		t.Errorf("expected MachinesByLocalID entry to remain unchanged (id=1), got %d", network.MachinesByLocalID[1])
 	}
 }
 
@@ -109,7 +109,7 @@ func TestAddMachine_DifferentIDsIndependent(t *testing.T) {
 		t.Fatalf("unexpected error adding second machine: %v", err)
 	}
 
-	if network.LocalNet[1] != 10 || network.LocalNet[2] != 20 {
-		t.Errorf("expected both machines registered independently, got %v", network.LocalNet)
+	if network.MachinesByLocalID[1] != 10 || network.MachinesByLocalID[2] != 20 {
+		t.Errorf("expected both machines registered independently, got %v", network.MachinesByLocalID)
 	}
 }
