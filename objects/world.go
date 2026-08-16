@@ -5,8 +5,9 @@ import (
 )
 
 type World struct {
-	Networks map[string]PublicNetwork
-	Machines map[int]Machine
+	Networks    map[string]PublicNetwork
+	Machines    map[int]Machine
+	Filesystems map[int]*Filesystem // keyed by MachineID
 }
 
 type Machine struct {

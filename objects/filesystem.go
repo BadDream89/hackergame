@@ -1,6 +1,9 @@
 package objects
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+)
 
 type Filesystem struct {
 	MachineID int
@@ -18,6 +21,13 @@ func NewDataNode(name string, isDir bool) *DataNode {
 	return &DataNode{
 		name:  name,
 		isDir: isDir,
+	}
+}
+
+func NewFilesystem(machineID int) *Filesystem {
+	return &Filesystem{
+		MachineID: machineID,
+		Root:      NewDataNode("/", true),
 	}
 }
 
@@ -81,4 +91,36 @@ func (node *DataNode) Child(name string) (*DataNode, bool) {
 
 func (node *DataNode) ChildCount() int {
 	return len(node.children)
+}
+
+// dataNodeJSON stores file contents as a plain string (rather than []byte,
+// which encoding/json always base64-encodes) so saved files stay readable.
+type dataNodeJSON struct {
+	Name     string               `json:"name"`
+	IsDir    bool                 `json:"isDir"`
+	Children map[string]*DataNode `json:"children,omitempty"`
+	Data     string               `json:"data,omitempty"`
+}
+
+func (node *DataNode) MarshalJSON() ([]byte, error) {
+	return json.Marshal(dataNodeJSON{
+		Name:     node.name,
+		IsDir:    node.isDir,
+		Children: node.children,
+		Data:     string(node.data),
+	})
+}
+
+func (node *DataNode) UnmarshalJSON(data []byte) error {
+	var aux dataNodeJSON
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	node.name = aux.Name
+	node.isDir = aux.IsDir
+	node.children = aux.Children
+	node.data = []byte(aux.Data)
+
+	return nil
 }

@@ -8,8 +8,9 @@ import (
 
 func newTestWorld() *objects.World {
 	return &objects.World{
-		Networks: make(map[string]objects.PublicNetwork),
-		Machines: make(map[int]objects.Machine),
+		Networks:    make(map[string]objects.PublicNetwork),
+		Machines:    make(map[int]objects.Machine),
+		Filesystems: make(map[int]*objects.Filesystem),
 	}
 }
 
