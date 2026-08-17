@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func Save(path string, v any) error {
+func save(path string, v any) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err
@@ -14,7 +14,7 @@ func Save(path string, v any) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-func Load(path string, v any) error {
+func load(path string, v any) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err

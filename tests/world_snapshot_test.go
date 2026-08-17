@@ -48,6 +48,7 @@ func TestSaveWorld_ProducesInspectableFile(t *testing.T) {
 		Networks:    make(map[string]objects.PublicNetwork),
 		Machines:    make(map[int]objects.Machine),
 		Filesystems: make(map[int]*objects.Filesystem),
+		Players:     make(map[string]objects.Player),
 	}
 
 	webServer := world.NewMachine("203.0.113.1", "web-server")
@@ -55,22 +56,10 @@ func TestSaveWorld_ProducesInspectableFile(t *testing.T) {
 	laptop := world.NewMachine("198.51.100.1", "laptop")
 
 	network1 := world.Networks["203.0.113.1"]
-	if _, err := network1.AddMachine(webServer.LocalID, &webServer); err != nil {
-		t.Fatalf("unexpected error registering web-server in its network: %v", err)
-	}
-	if _, err := network1.AddMachine(dbServer.LocalID, &dbServer); err != nil {
-		t.Fatalf("unexpected error registering db-server in its network: %v", err)
-	}
 	if _, err := network1.ForwardPort(8080, webServer.LocalID); err != nil {
 		t.Fatalf("unexpected error forwarding port 8080: %v", err)
 	}
 	world.Networks["203.0.113.1"] = network1
-
-	network2 := world.Networks["198.51.100.1"]
-	if _, err := network2.AddMachine(laptop.LocalID, &laptop); err != nil {
-		t.Fatalf("unexpected error registering laptop in its network: %v", err)
-	}
-	world.Networks["198.51.100.1"] = network2
 
 	for _, machine := range []objects.Machine{webServer, dbServer, laptop} {
 		fs := objects.NewFilesystem(machine.MachineID)

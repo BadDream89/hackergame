@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"errors"
 	"math/rand/v2"
 )
 
@@ -8,6 +9,7 @@ type World struct {
 	Networks    map[string]PublicNetwork
 	Machines    map[int]Machine
 	Filesystems map[int]*Filesystem // keyed by MachineID
+	Players     map[string]Player   // nickname: player
 }
 
 type Machine struct {
@@ -17,10 +19,17 @@ type Machine struct {
 	MachineName string // name of the computer obviously
 }
 
+type Player struct {
+	MainMachineID int // id of main machine
+	Nickname      string
+}
+
+// creates a new machine object
+// adds it in the World.Machines
+// lists on the PublicNetwork
 func (world *World) NewMachine(publicIp string, machineName string) Machine {
 	id := int(rand.Uint32())
 
-	// list it in the public network
 	if _, exists := world.Networks[publicIp]; !exists {
 		world.Networks[publicIp] = PublicNetwork{
 			PublicIp:          publicIp,
@@ -30,12 +39,15 @@ func (world *World) NewMachine(publicIp string, machineName string) Machine {
 		}
 	}
 
+	// list it in the public network
 	// increment the local id counter in the public network for generating a new local id
 	pubnet := world.Networks[publicIp]
 	pubnet.LocalIDCounter += 1
-	world.Networks[publicIp] = pubnet
-
 	localID := pubnet.LocalIDCounter
+	pubnet.MachinesByLocalID[localID] = id
+
+	// update public network in the world
+	world.Networks[publicIp] = pubnet
 
 	machineObj := Machine{
 		MachineID:   id,
@@ -52,4 +64,20 @@ func (world *World) NewMachine(publicIp string, machineName string) Machine {
 func (world *World) GetMachine(machineID int) (Machine, bool) {
 	machine, exists := world.Machines[machineID]
 	return machine, exists
+}
+
+func (world *World) NewPlayer(nickname string, machineName string) error {
+	if _, exists := world.Players[nickname]; exists {
+		return errors.New("that player already exists")
+	}
+
+	playerMachine := world.NewMachine("", machineName)
+	player := Player{
+		MainMachineID: playerMachine.MachineID,
+		Nickname:      nickname,
+	}
+
+	world.Players[nickname] = player
+
+	return nil
 }

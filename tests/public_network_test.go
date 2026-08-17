@@ -64,52 +64,46 @@ func TestForwardPort_DifferentPortsIndependent(t *testing.T) {
 	}
 }
 
-func TestAddMachine_Success(t *testing.T) {
+func TestUnforwardPort_Success(t *testing.T) {
 	network := newTestNetwork()
-	machine := &objects.Machine{MachineID: 42, LocalID: 1}
+	if _, err := network.ForwardPort(8080, 1); err != nil {
+		t.Fatalf("unexpected error forwarding port: %v", err)
+	}
 
-	got, err := network.AddMachine(1, machine)
-	if err != nil {
+	if err := network.UnforwardPort(8080); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if got != 1 {
-		t.Errorf("expected returned localID %d, got %d", 1, got)
-	}
-	if id, ok := network.MachinesByLocalID[1]; !ok || id != 42 {
-		t.Errorf("expected MachinesByLocalID to map 1 -> 42, got %v (ok=%v)", id, ok)
+	if _, exists := network.ForwardedPorts[8080]; exists {
+		t.Errorf("expected port 8080 to be removed from ForwardedPorts, got %v", network.ForwardedPorts)
 	}
 }
 
-func TestAddMachine_AlreadyExists(t *testing.T) {
+func TestUnforwardPort_NotForwardedErrors(t *testing.T) {
 	network := newTestNetwork()
-	first := &objects.Machine{MachineID: 1, LocalID: 1}
-	if _, err := network.AddMachine(1, first); err != nil {
-		t.Fatalf("unexpected error adding first machine: %v", err)
-	}
 
-	second := &objects.Machine{MachineID: 2, LocalID: 1}
-	_, err := network.AddMachine(1, second)
+	err := network.UnforwardPort(8080)
 	if err == nil {
-		t.Fatal("expected error when adding a machine with a duplicate localID, got nil")
-	}
-	if network.MachinesByLocalID[1] != 1 {
-		t.Errorf("expected MachinesByLocalID entry to remain unchanged (id=1), got %d", network.MachinesByLocalID[1])
+		t.Fatal("expected error when unforwarding a port that was never forwarded, got nil")
 	}
 }
 
-func TestAddMachine_DifferentIDsIndependent(t *testing.T) {
+func TestUnforwardPort_DoesNotAffectOtherPorts(t *testing.T) {
 	network := newTestNetwork()
-	m1 := &objects.Machine{MachineID: 10, LocalID: 1}
-	m2 := &objects.Machine{MachineID: 20, LocalID: 2}
-
-	if _, err := network.AddMachine(1, m1); err != nil {
-		t.Fatalf("unexpected error adding first machine: %v", err)
+	if _, err := network.ForwardPort(80, 1); err != nil {
+		t.Fatalf("unexpected error forwarding port 80: %v", err)
 	}
-	if _, err := network.AddMachine(2, m2); err != nil {
-		t.Fatalf("unexpected error adding second machine: %v", err)
+	if _, err := network.ForwardPort(443, 2); err != nil {
+		t.Fatalf("unexpected error forwarding port 443: %v", err)
 	}
 
-	if network.MachinesByLocalID[1] != 10 || network.MachinesByLocalID[2] != 20 {
-		t.Errorf("expected both machines registered independently, got %v", network.MachinesByLocalID)
+	if err := network.UnforwardPort(80); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if _, exists := network.ForwardedPorts[80]; exists {
+		t.Error("expected port 80 to be removed")
+	}
+	if network.ForwardedPorts[443] != 2 {
+		t.Errorf("expected port 443 to remain forwarded to localID 2, got %d", network.ForwardedPorts[443])
 	}
 }

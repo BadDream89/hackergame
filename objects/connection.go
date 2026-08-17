@@ -2,11 +2,6 @@ package objects
 
 import "errors"
 
-type Player struct {
-	MainMachineID int // id of main machine
-	Nickname      string
-}
-
 // do not use for creating new connection handler
 type ConnectionHandler struct {
 	CurrentMachineID int   // id of current machine

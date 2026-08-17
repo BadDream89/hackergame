@@ -11,6 +11,7 @@ func newTestWorld() *objects.World {
 		Networks:    make(map[string]objects.PublicNetwork),
 		Machines:    make(map[int]objects.Machine),
 		Filesystems: make(map[int]*objects.Filesystem),
+		Players:     make(map[string]objects.Player),
 	}
 }
 
@@ -44,6 +45,21 @@ func TestNewMachine_RegistersInWorldMachines(t *testing.T) {
 	}
 	if stored != machine {
 		t.Errorf("expected stored machine %+v to equal returned machine %+v", stored, machine)
+	}
+}
+
+func TestNewMachine_RegistersInNetworkLocalNet(t *testing.T) {
+	world := newTestWorld()
+
+	machine := world.NewMachine("203.0.113.1", "test-pc")
+
+	network := world.Networks["203.0.113.1"]
+	registeredID, ok := network.MachinesByLocalID[machine.LocalID]
+	if !ok {
+		t.Fatalf("expected local id %d to be registered in the network's MachinesByLocalID", machine.LocalID)
+	}
+	if registeredID != machine.MachineID {
+		t.Errorf("expected MachinesByLocalID[%d] = %d, got %d", machine.LocalID, machine.MachineID, registeredID)
 	}
 }
 
@@ -111,5 +127,49 @@ func TestNewMachine_DifferentPublicIpsAreIndependent(t *testing.T) {
 	}
 	if b1.LocalID != 1 {
 		t.Errorf("expected independent network 198.51.100.1 to start its own local id count at 1, got %d", b1.LocalID)
+	}
+}
+
+func TestNewPlayer_Success(t *testing.T) {
+	world := newTestWorld()
+
+	err := world.NewPlayer("neo", "home-pc")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	player, ok := world.Players["neo"]
+	if !ok {
+		t.Fatal("expected player to be registered in world.Players")
+	}
+	if player.Nickname != "neo" {
+		t.Errorf("expected Nickname %q, got %q", "neo", player.Nickname)
+	}
+	if player.MainMachineID == 0 {
+		t.Error("expected a non-zero MainMachineID")
+	}
+
+	machine, exists := world.GetMachine(player.MainMachineID)
+	if !exists {
+		t.Fatalf("expected main machine %d to be registered in world.Machines", player.MainMachineID)
+	}
+	if machine.MachineName != "home-pc" {
+		t.Errorf("expected main machine name %q, got %q", "home-pc", machine.MachineName)
+	}
+}
+
+func TestNewPlayer_DuplicateNicknameErrors(t *testing.T) {
+	world := newTestWorld()
+
+	if err := world.NewPlayer("neo", "home-pc"); err != nil {
+		t.Fatalf("unexpected error creating first player: %v", err)
+	}
+
+	err := world.NewPlayer("neo", "other-pc")
+	if err == nil {
+		t.Fatal("expected error when creating a player with a duplicate nickname, got nil")
+	}
+	if len(world.Players) != 1 {
+		t.Errorf("expected world.Players to remain length 1, got %d", len(world.Players))
 	}
 }

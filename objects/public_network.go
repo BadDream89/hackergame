@@ -11,10 +11,8 @@ type PublicNetwork struct {
 
 // functions
 func (network *PublicNetwork) ForwardPort(port int, localID int) (int, error) {
-	for p := range network.ForwardedPorts {
-		if p == port {
-			return network.ForwardedPorts[p], errors.New("Port is already forwarded.")
-		}
+	if existing, exists := network.ForwardedPorts[port]; exists {
+		return existing, errors.New("Port is already forwarded.")
 	}
 
 	network.ForwardedPorts[port] = localID
@@ -22,14 +20,12 @@ func (network *PublicNetwork) ForwardPort(port int, localID int) (int, error) {
 	return localID, nil
 }
 
-func (network *PublicNetwork) AddMachine(localID int, machine *Machine) (int, error) {
-	for m := range network.MachinesByLocalID {
-		if m == localID {
-			return machine.LocalID, errors.New("Machine with this ip already exists.")
-		}
+func (network *PublicNetwork) UnforwardPort(port int) error {
+	if _, exists := network.ForwardedPorts[port]; !exists {
+		return errors.New("that port is not forwarded")
 	}
 
-	network.MachinesByLocalID[localID] = machine.MachineID
+	delete(network.ForwardedPorts, port)
 
-	return localID, nil
+	return nil
 }

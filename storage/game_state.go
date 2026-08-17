@@ -1,9 +1,14 @@
 package storage
 
-import "hackergame/objects"
+import (
+	"errors"
+	"os"
+
+	"hackergame/objects"
+)
 
 func SaveWorld(path string, world *objects.World) error {
-	return Save(path, world)
+	return save(path, world)
 }
 
 func LoadWorld(path string) (*objects.World, error) {
@@ -11,9 +16,13 @@ func LoadWorld(path string) (*objects.World, error) {
 		Networks:    make(map[string]objects.PublicNetwork),
 		Machines:    make(map[int]objects.Machine),
 		Filesystems: make(map[int]*objects.Filesystem),
+		Players:     make(map[string]objects.Player),
 	}
 
-	if err := Load(path, world); err != nil {
+	if err := load(path, world); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return world, nil
+		}
 		return nil, err
 	}
 

@@ -11,38 +11,6 @@ import (
 	"hackergame/storage"
 )
 
-type samplePayload struct {
-	Name  string
-	Count int
-}
-
-func TestSaveLoad_GenericRoundTrip(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "sample.json")
-	want := samplePayload{Name: "test", Count: 42}
-
-	if err := storage.Save(path, want); err != nil {
-		t.Fatalf("unexpected error saving: %v", err)
-	}
-
-	var got samplePayload
-	if err := storage.Load(path, &got); err != nil {
-		t.Fatalf("unexpected error loading: %v", err)
-	}
-
-	if got != want {
-		t.Errorf("expected loaded payload %+v, got %+v", want, got)
-	}
-}
-
-func TestLoad_MissingFileErrors(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "does-not-exist.json")
-
-	var got samplePayload
-	if err := storage.Load(path, &got); err == nil {
-		t.Fatal("expected error loading a nonexistent file, got nil")
-	}
-}
-
 func buildTestFilesystem(t *testing.T, machineID int) *objects.Filesystem {
 	t.Helper()
 
@@ -160,10 +128,23 @@ func TestLoadWorld_FileDataIsNotBase64Encoded(t *testing.T) {
 	}
 }
 
-func TestLoadWorld_MissingFileErrors(t *testing.T) {
+func TestLoadWorld_MissingFileReturnsEmptyWorld(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "does-not-exist.json")
 
-	if _, err := storage.LoadWorld(path); err == nil {
-		t.Fatal("expected error loading a nonexistent world file, got nil")
+	world, err := storage.LoadWorld(path)
+	if err != nil {
+		t.Fatalf("expected no error on first run (no save file yet), got %v", err)
+	}
+	if world == nil {
+		t.Fatal("expected a non-nil empty world, got nil")
+	}
+	if len(world.Networks) != 0 || len(world.Machines) != 0 || len(world.Filesystems) != 0 || len(world.Players) != 0 {
+		t.Errorf("expected a freshly-initialized empty world, got %+v", world)
+	}
+
+	// world's maps must be usable, not nil, since callers (e.g. NewMachine) write into them directly.
+	machine := world.NewMachine("203.0.113.1", "test-pc")
+	if machine.MachineID == 0 {
+		t.Error("expected NewMachine to work on a world returned for a missing save file")
 	}
 }
