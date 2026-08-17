@@ -10,21 +10,14 @@ import (
 	"strings"
 )
 
-var nickname string
+var passname string
 var ip string
 var address string
 
 func main() {
 
-	fmt.Print("Nickname: ")
-	_, err := fmt.Scan(&nickname)
-	if err != nil {
-		fmt.Printf("scan error: %s\n", err)
-		return
-	}
-
 	for {
-		fmt.Print("\nInput IP: ")
+		fmt.Print("Input IP: ")
 		_, err := fmt.Scan(&ip)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -51,8 +44,15 @@ func handleConnection() {
 
 	fmt.Printf("[+] Opened connection with %s\n", client.RemoteAddr())
 
-	if _, err := client.Write([]byte(nickname)); err != nil {
-		fmt.Printf("cannot send nickname: %s\n", err)
+	fmt.Print("Enter passname: ")
+	_, err = fmt.Scan(&passname)
+	if err != nil {
+		fmt.Printf("scan error: %s\n", err)
+		return
+	}
+
+	if _, err := client.Write([]byte(passname)); err != nil {
+		fmt.Printf("cannot send passname: %s\n", err)
 		return
 	}
 
@@ -84,8 +84,8 @@ func handleConnection() {
 	}
 }
 
-// registerOrLogin handles the server's response to the nickname packet: a
-// new nickname gets "::REG::", prompting for a machine name; an existing
+// registerOrLogin handles the server's response to the passname packet: a
+// new passname gets "::REG::", prompting for a machine name; an existing
 // one goes straight to "::OK::". Either way it blocks until "::OK::" arrives.
 func registerOrLogin(client net.Conn) error {
 	buf := make([]byte, 1024)

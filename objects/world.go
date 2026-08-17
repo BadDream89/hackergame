@@ -9,7 +9,7 @@ type World struct {
 	Networks    map[string]PublicNetwork
 	Machines    map[int]Machine
 	Filesystems map[int]*Filesystem // keyed by MachineID
-	Players     map[string]Player   // nickname: player
+	Players     map[string]Player   // passname: player
 }
 
 type Machine struct {
@@ -21,7 +21,7 @@ type Machine struct {
 
 type Player struct {
 	MainMachineID int // id of main machine
-	Nickname      string
+	Passname      string
 }
 
 // creates a new machine object
@@ -66,18 +66,18 @@ func (world *World) GetMachine(machineID int) (Machine, bool) {
 	return machine, exists
 }
 
-func (world *World) NewPlayer(nickname string, machineName string) error {
-	if _, exists := world.Players[nickname]; exists {
+func (world *World) NewPlayer(passname string, machineName string) error {
+	if _, exists := world.Players[passname]; exists {
 		return errors.New("that player already exists")
 	}
 
 	playerMachine := world.NewMachine("", machineName)
 	player := Player{
 		MainMachineID: playerMachine.MachineID,
-		Nickname:      nickname,
+		Passname:      passname,
 	}
 
-	world.Players[nickname] = player
+	world.Players[passname] = player
 
 	return nil
 }

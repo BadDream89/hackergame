@@ -142,8 +142,8 @@ func TestNewPlayer_Success(t *testing.T) {
 	if !ok {
 		t.Fatal("expected player to be registered in world.Players")
 	}
-	if player.Nickname != "neo" {
-		t.Errorf("expected Nickname %q, got %q", "neo", player.Nickname)
+	if player.Passname != "neo" {
+		t.Errorf("expected Passname %q, got %q", "neo", player.Passname)
 	}
 	if player.MainMachineID == 0 {
 		t.Error("expected a non-zero MainMachineID")
@@ -158,7 +158,7 @@ func TestNewPlayer_Success(t *testing.T) {
 	}
 }
 
-func TestNewPlayer_DuplicateNicknameErrors(t *testing.T) {
+func TestNewPlayer_DuplicatePassnameErrors(t *testing.T) {
 	world := newTestWorld()
 
 	if err := world.NewPlayer("neo", "home-pc"); err != nil {
@@ -167,7 +167,7 @@ func TestNewPlayer_DuplicateNicknameErrors(t *testing.T) {
 
 	err := world.NewPlayer("neo", "other-pc")
 	if err == nil {
-		t.Fatal("expected error when creating a player with a duplicate nickname, got nil")
+		t.Fatal("expected error when creating a player with a duplicate passname, got nil")
 	}
 	if len(world.Players) != 1 {
 		t.Errorf("expected world.Players to remain length 1, got %d", len(world.Players))
